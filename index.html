@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="color-scheme" content="light only">
+<meta name="theme-color" content="#F8F3EC">
+<meta name="supported-color-schemes" content="light">
 <title>Ammi Barre Studio — Las Palmas de Gran Canaria</title>
 <meta name="description" content="Ammi Barre Studio, estudio boutique de barre en Las Palmas de Gran Canaria. Movimiento, fuerza y bienestar.">
 
@@ -12,6 +15,8 @@
 
 <style>
   :root{
+    color-scheme: light only;
+
     --wine:      #5C1121;
     --wine-2:    #7A1B2C;
     --wine-soft: #8f3345;
@@ -29,7 +34,7 @@
   }
 
   *,*::before,*::after{ box-sizing:border-box; }
-  html{ scroll-behavior:auto; }
+  html{ scroll-behavior:auto; color-scheme: light only; }
   body{
     margin:0;
     background:var(--white);
@@ -206,16 +211,12 @@
     background-clip:text;
     color:transparent;
     -webkit-text-fill-color:transparent;
-    filter:drop-shadow(0 2px 4px rgba(0,0,0,.25)) drop-shadow(0 0 30px rgba(255,255,255,.5));
-    animation:heroShine 4.2s ease-in-out .9s 1, heroShineLoop 7s linear 5.1s infinite;
+    text-shadow:0 0 30px rgba(255,255,255,.5);
+    animation:heroShine 1.6s var(--ease) .9s 1 forwards;
   }
   @keyframes heroShine{
     0%{ background-position:180% 0; }
     100%{ background-position:-40% 0; }
-  }
-  @keyframes heroShineLoop{
-    0%{ background-position:180% 0; }
-    45%,100%{ background-position:-40% 0; }
   }
   .hero-content__tagline{
     font-family:var(--sans);
@@ -225,29 +226,6 @@
     color:#7a1b2c;
     opacity:1;
     text-shadow:0 1px 3px rgba(0,0,0,.2), 0 0 22px rgba(255,255,255,.55);
-  }
-
-  .hero-scroll{
-    position:absolute;
-    left:50%; bottom:38px;
-    transform:translateX(-50%);
-    z-index:5;
-    display:flex; flex-direction:column; align-items:center; gap:10px;
-    color:var(--white);
-    font-family:var(--sans);
-    font-size:10.5px;
-    letter-spacing:.32em;
-    text-transform:uppercase;
-    will-change:opacity;
-  }
-  .hero-scroll__line{
-    width:1px; height:34px;
-    background:linear-gradient(180deg, rgba(255,255,255,.9), rgba(255,255,255,0));
-    animation:scrollPulse 1.8s ease-in-out infinite;
-  }
-  @keyframes scrollPulse{
-    0%,100%{ transform:scaleY(1); opacity:.9; }
-    50%{ transform:scaleY(.55); opacity:.4; }
   }
 
   /* =====================================================
@@ -284,7 +262,7 @@
   /* =====================================================
      SECTION shared
   ===================================================== */
-  .section{ padding:130px 0; }
+  .section{ padding:130px 0; background:var(--white); }
   .section--cream{ background:var(--cream); }
   .section__head{ margin-bottom:64px; }
   .section__title{
@@ -616,6 +594,7 @@
       id="entranceVideo"
       class="hero-video"
       src="ammi-entrance.mp4"
+      poster="ammi-poster.jpg"
       muted
       playsinline
       webkit-playsinline="true"
@@ -631,11 +610,6 @@
         <h1 class="hero-content__title">Ammi Barre Studio</h1>
         <p class="hero-content__tagline">Movimiento, fuerza y bienestar.</p>
       </div>
-    </div>
-
-    <div class="hero-scroll" id="heroScroll">
-      <span>Scroll to enter</span>
-      <span class="hero-scroll__line"></span>
     </div>
   </div>
 </section>
@@ -826,23 +800,30 @@
   var heroPin     = document.getElementById('heroPin');
   var video       = document.getElementById('entranceVideo');
   var heroContent = document.getElementById('heroContent');
-  var heroScroll  = document.getElementById('heroScroll');
 
-  var duration = 0;
-  var rafId = null;
-  var lastTarget = -1;
-  var primed = false;
+  var duration    = 0;
+  var frameStep   = 1 / 30; // matches the source's re-encoded frame rate
+  var rawTarget   = 0;      // where scroll says the video should be
+  var smoothTime  = 0;      // eased current position we actually paint
+  var lastPainted = -1;
+  var primed      = false;
+  var loopRunning = false;
 
   function primeVideo(){
-    // iOS/Safari need the video to be "played" once (muted) before
-    // currentTime scrubbing will actually paint new frames.
+    // Some mobile browsers (iOS Safari especially) won't paint any frame
+    // — showing black — until the video has actually been played once.
+    // We attempt this immediately and silently, muted, then pause right away.
     if (primed) return;
-    primed = true;
     var p = video.play();
     if (p && typeof p.then === 'function'){
-      p.then(function(){ video.pause(); })
-       .catch(function(){ /* autoplay blocked — fine, scrubbing still works on most browsers */ });
+      p.then(function(){
+        primed = true;
+        video.pause();
+      }).catch(function(){
+        // Autoplay blocked by the browser — will retry on first user interaction.
+      });
     } else {
+      primed = true;
       video.pause();
     }
   }
@@ -850,59 +831,76 @@
   function onMeta(){
     duration = video.duration || 0;
     try { video.currentTime = 0; } catch(e){}
-    update();
+    primeVideo();
+    computeRawTarget();
+    smoothTime = rawTarget;
   }
   video.addEventListener('loadedmetadata', onMeta);
+  video.addEventListener('loadeddata', primeVideo);
+  video.addEventListener('canplay', primeVideo);
   if (video.readyState >= 1) onMeta();
+  primeVideo();
 
-  function setProgressVisuals(progress){
-    // fade wordmark / tagline out early
-    var textOpacity = 1 - Math.min(progress / 0.28, 1);
-    heroContent.style.opacity = textOpacity;
-    heroContent.style.transform = 'translateY(' + (progress * -40) + 'px)';
-
-    // fade scroll cue out very early
-    var scrollOpacity = 1 - Math.min(progress / 0.08, 1);
-    heroScroll.style.opacity = scrollOpacity;
-  }
-
-  function update(){
-    rafId = null;
+  function computeRawTarget(){
     var rect = heroPin.getBoundingClientRect();
     var scrollable = heroPin.offsetHeight - window.innerHeight;
-    if (scrollable <= 0) return;
+    if (scrollable <= 0){ rawTarget = 0; return 0; }
 
     var scrolled = -rect.top;
     var progress = scrolled / scrollable;
     if (progress < 0) progress = 0;
     if (progress > 1) progress = 1;
 
-    setProgressVisuals(progress);
+    // fade + lift the wordmark as we scroll into the studio
+    var textOpacity = 1 - Math.min(progress / 0.28, 1);
+    heroContent.style.opacity = textOpacity;
+    heroContent.style.transform = 'translateY(' + (progress * -40) + 'px)';
 
-    if (duration > 0){
-      var target = progress * duration;
-      if (Math.abs(target - lastTarget) > 0.008){
-        try { video.currentTime = target; } catch(e){}
-        lastTarget = target;
-      }
+    rawTarget = duration > 0 ? progress * duration : 0;
+    return progress;
+  }
+
+  // A continuous, lightly-eased loop rather than seeking on every raw
+  // scroll event — this keeps things smooth on desktop (fast, chunky wheel
+  // deltas) exactly as it already was on touch devices.
+  function loop(){
+    computeRawTarget();
+    smoothTime += (rawTarget - smoothTime) * 0.35;
+    if (Math.abs(smoothTime - rawTarget) < 0.004) smoothTime = rawTarget;
+
+    if (duration > 0 && Math.abs(smoothTime - lastPainted) >= frameStep){
+      try { video.currentTime = smoothTime; } catch(e){}
+      lastPainted = smoothTime;
+    }
+
+    var stillEasing = Math.abs(smoothTime - rawTarget) > 0.0005;
+    var pinRect = heroPin.getBoundingClientRect();
+    var nearPin = pinRect.bottom > -200 && pinRect.top < window.innerHeight + 200;
+
+    if (nearPin || stillEasing){
+      requestAnimationFrame(loop);
+    } else {
+      loopRunning = false;
     }
   }
 
-  function requestUpdate(){
-    if (rafId === null){
-      rafId = requestAnimationFrame(update);
+  function ensureLoop(){
+    if (!loopRunning){
+      loopRunning = true;
+      requestAnimationFrame(loop);
     }
   }
 
-  window.addEventListener('scroll', requestUpdate, { passive:true });
-  window.addEventListener('resize', requestUpdate);
+  window.addEventListener('scroll', ensureLoop, { passive:true });
+  window.addEventListener('resize', ensureLoop);
 
-  // Prime on first user interaction (touch/scroll/click) — required by iOS.
-  ['touchstart','scroll','pointerdown'].forEach(function(evt){
-    window.addEventListener(evt, primeVideo, { passive:true, once:true });
+  // Fallback: if autoplay-priming was blocked, the first tap/scroll/click
+  // counts as a user gesture and will succeed.
+  ['touchstart','scroll','pointerdown','click'].forEach(function(evt){
+    window.addEventListener(evt, primeVideo, { passive:true });
   });
 
-  update();
+  ensureLoop();
 })();
 </script>
 
