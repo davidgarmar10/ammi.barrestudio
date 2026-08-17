@@ -347,8 +347,9 @@ section{padding:130px 0;}
 @media(max-width:600px){.tarifas-row-small{grid-template-columns:1fr;}}
 .price-card-flat{
   background:var(--white-warm);border:1px solid rgba(43,29,32,.12);
-  padding:26px 32px;display:flex;align-items:center;justify-content:space-between;
+  padding:26px 32px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
 }
+.price-card-flat .btn{padding:11px 22px;flex:none;}
 .price-card-flat .plan-name{font-size:13px;letter-spacing:.02em;text-transform:none;color:var(--ink);font-weight:400;font-family:var(--serif-display);font-style:italic;font-size:19px;}
 .price-card-flat .plan-price{font-family:var(--serif-strong);font-size:24px;color:var(--burgundy);font-weight:600;}
 
@@ -628,20 +629,23 @@ footer{background:var(--ink);color:var(--beige-soft);padding:80px 0 34px;}
       <div class="price-card reveal">
         <div class="plan-name">1 clase / semana</div>
         <div class="plan-price">44<sup>€</sup></div>
+        <a href="https://wa.me/34608679042?text=Hola%20Ammi%2C%20quiero%20apuntarme%20al%20bono%20de%201%20clase%20por%20semana" target="_blank" rel="noopener" class="btn btn-secondary" style="margin-top:28px;width:100%;">Reservar</a>
       </div>
       <div class="price-card reveal reveal-delay-1">
         <div class="plan-name">2 clases / semana</div>
         <div class="plan-price">78<sup>€</sup></div>
+        <a href="https://wa.me/34608679042?text=Hola%20Ammi%2C%20quiero%20apuntarme%20al%20bono%20de%202%20clases%20por%20semana" target="_blank" rel="noopener" class="btn btn-secondary" style="margin-top:28px;width:100%;">Reservar</a>
       </div>
       <div class="price-card reveal reveal-delay-2">
         <div class="plan-name">3 clases / semana</div>
         <div class="plan-price">108<sup>€</sup></div>
+        <a href="https://wa.me/34608679042?text=Hola%20Ammi%2C%20quiero%20apuntarme%20al%20bono%20de%203%20clases%20por%20semana" target="_blank" rel="noopener" class="btn btn-secondary" style="margin-top:28px;width:100%;">Reservar</a>
       </div>
     </div>
 
     <div class="tarifas-row-small">
-      <div class="price-card-flat reveal"><span class="plan-name">Clase suelta</span><span class="plan-price">14€</span></div>
-      <div class="price-card-flat reveal reveal-delay-1"><span class="plan-name">Primera clase</span><span class="plan-price">10€</span></div>
+      <div class="price-card-flat reveal"><span class="plan-name">Clase suelta</span><span class="plan-price">14€</span><a href="https://wa.me/34608679042?text=Hola%20Ammi%2C%20quiero%20reservar%20una%20clase%20suelta" target="_blank" rel="noopener" class="btn btn-secondary" style="padding:11px 20px;">Reservar</a></div>
+      <div class="price-card-flat reveal reveal-delay-1"><span class="plan-name">Primera clase</span><span class="plan-price">10€</span><a href="https://wa.me/34608679042?text=Hola%20Ammi%2C%20quiero%20reservar%20mi%20primera%20clase" target="_blank" rel="noopener" class="btn btn-secondary" style="padding:11px 20px;">Reservar</a></div>
     </div>
 
     <div class="featured-card reveal">
